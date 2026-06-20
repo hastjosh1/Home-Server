@@ -1,0 +1,197 @@
+version: '3.8'
+
+services:
+  # ============================================================
+  # FlareSolverr - Cloudflare Challenge Solver
+  # Used by Prowlarr to bypass Cloudflare-protected indexers
+  # ============================================================
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ:-Etc/UTC}
+    ports:
+      - "8191:8191"
+    restart: unless-stopped
+
+  # ============================================================
+  # Prowlarr - Indexer Manager
+  # Manages all your torrent indexers in one place and syncs
+  # them automatically to Radarr and Sonarr
+  # Web UI: http://<SERVER_IP>:9696
+  # ============================================================
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      - /opt/media-stack/config/prowlarr:/config
+    ports:
+      - "9696:9696"
+    restart: unless-stopped
+
+  # ============================================================
+  # Emby - Media Server (like Netflix for your own content)
+  # Streams your movies and TV shows to any device
+  # Web UI: http://<SERVER_IP>:8096
+  # ============================================================
+  emby:
+    image: lscr.io/linuxserver/emby:latest
+    container_name: emby
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      - /opt/media-stack/config/emby:/config
+      - /data/media/tv:/data/tvshows
+      - /data/media/movies:/data/movies
+    ports:
+      - "8096:8096"
+    restart: unless-stopped
+
+  # ============================================================
+  # Radarr - Movie Manager
+  # Automatically searches, downloads, and organizes movies
+  # Web UI: http://<SERVER_IP>:7878
+  # ============================================================
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      - /opt/media-stack/config/radarr:/config
+      - /data:/data
+    ports:
+      - "7878:7878"
+    restart: unless-stopped
+
+  # ============================================================
+  # Sonarr - TV Show Manager
+  # Automatically searches, downloads, and organizes TV shows
+  # Web UI: http://<SERVER_IP>:8989
+  # ============================================================
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      - /opt/media-stack/config/sonarr:/config
+      - /data:/data
+    ports:
+      - "8989:8989"
+    restart: unless-stopped
+
+  # ============================================================
+  # RDTClient - Torbox Download Client
+  # Bridges Torbox (cloud torrent service) with Radarr/Sonarr
+  # Web UI: http://<SERVER_IP>:6500
+  # ============================================================
+  rdtclient:
+    image: rogerfar/rdtclient:latest
+    container_name: rdtclient
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Etc/UTC}
+    volumes:
+      - /opt/media-stack/config/rdtclient:/data/db
+      - /data/torrents:/data/downloads
+    ports:
+      - "6500:6500"
+    restart: unless-stopped
+
+  # ============================================================
+  # DuckDNS - Dynamic DNS Updater
+  # Keeps your duckdns.org subdomain pointed at your home IP
+  # even when your ISP changes it
+  # ============================================================
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Etc/UTC}
+      - SUBDOMAINS=${DUCKDNS_SUBDOMAIN}
+      - TOKEN=${DUCKDNS_TOKEN}
+      - LOG_FILE=false
+    restart: unless-stopped
+
+  # ============================================================
+  # Homarr Redis - Lightweight database for Homarr dashboard
+  # Required by Homarr v1.0+ for real-time updates
+  # ============================================================
+  homarr-redis:
+    image: redis:7-alpine
+    container_name: homarr-redis
+    volumes:
+      - /opt/media-stack/config/homarr/redis:/data
+    restart: unless-stopped
+
+  # ============================================================
+  # Homarr - Home Server Dashboard
+  # Beautiful dashboard to access all your services in one place
+  # Web UI: http://<SERVER_IP>:7575
+  # ============================================================
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    container_name: homarr
+    restart: unless-stopped
+    environment:
+      - SECRET_ENCRYPTION_KEY=${HOMARR_SECRET_KEY}
+      - REDIS_URL=redis://homarr-redis:6379
+    depends_on:
+      - homarr-redis
+    volumes:
+      - /opt/media-stack/config/homarr/appdata:/appdata
+    ports:
+      - '7575:7575'
+
+  # ============================================================
+  # Pi-hole - Network-wide Ad Blocker
+  # Blocks ads and trackers for every device on your network
+  # Web UI: http://<SERVER_IP>:8089/admin
+  #
+  # NOTE: Pi-hole is bound to SERVER_IP instead of 0.0.0.0 to
+  # avoid port 53 conflicts with other DNS services (e.g. WARP)
+  # ============================================================
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "${SERVER_IP}:53:53/tcp"
+      - "${SERVER_IP}:53:53/udp"
+      - "8089:80/tcp"
+    environment:
+      - TZ=${TZ:-Etc/UTC}
+      - WEBPASSWORD=${PIHOLE_PASSWORD:-}
+    volumes:
+      - '/opt/media-stack/config/pihole/etc-pihole:/etc/pihole'
+      - '/opt/media-stack/config/pihole/etc-dnsmasq.d:/etc/dnsmasq.d'
+    restart: unless-stopped
+
+  # ============================================================
+  # WARP Proxy - Cloudflare WARP SOCKS5 Proxy
+  # Routes traffic through Cloudflare's network to bypass
+  # ISP-level website blocks. Used by Prowlarr for indexers.
+  # Proxy address: socks5://<SERVER_IP>:1080
+  # ============================================================
+  warp-proxy:
+    image: ghcr.io/kingcc/warproxy:latest
+    container_name: warp-proxy
+    restart: unless-stopped
+    ports:
+      - "1080:1080"
+    cap_add:
+      - NET_ADMIN

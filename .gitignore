@@ -1,0 +1,13 @@
+# Environment variables (contains secrets like tokens and keys)
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
