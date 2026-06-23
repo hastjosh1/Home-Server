@@ -195,3 +195,15 @@ services:
       - "1080:1080"
     cap_add:
       - NET_ADMIN
+
+  # ============================================================
+  # OpenSpeedTest - Network Speed Test
+  # Test your local and internet connection speed
+  # Web UI: http://<SERVER_IP>:3000
+  # ============================================================
+  openspeedtest:
+    image: openspeedtest/latest
+    container_name: openspeedtest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
