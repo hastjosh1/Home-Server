@@ -37,6 +37,7 @@ A complete, self-hosted media server and home lab stack powered by Docker. Searc
 | **[DuckDNS](https://www.duckdns.org/)** | Dynamic DNS — keeps a free domain pointed at your home IP | — |
 | **[WARP Proxy](https://developers.cloudflare.com/warp-client/)** | SOCKS5 proxy — routes traffic through Cloudflare to bypass ISP blocks | `1080` |
 | **[OpenSpeedTest](https://openspeedtest.com/)** | Network speed test — test your local and internet connection speed | `3000` |
+| **[RuView](https://github.com/ruvnet/RuView)** | Spatial Intelligence — Demo mode showcasing WiFi sensing | `3001` |
 
 ---
 
@@ -185,6 +186,7 @@ After running the setup script, your containers are running but they don't know 
 | `53` | Pi-hole DNS | (used automatically) |
 | `1080` | WARP SOCKS5 Proxy | `socks5://<SERVER_IP>:1080` |
 | `3000` | OpenSpeedTest | `http://<SERVER_IP>:3000` |
+| `3001` | RuView (Demo) | `http://<SERVER_IP>:3001` |
 
 ---
 

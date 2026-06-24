@@ -207,3 +207,18 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+
+  # ============================================================
+  # RuView (WiFi DensePose) - Simulated Demo Mode
+  # Turns WiFi signals into spatial intelligence
+  # Web UI: http://<SERVER_IP>:3001
+  # ============================================================
+  ruview:
+    image: ruvnet/wifi-densepose:latest
+    container_name: ruview
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - CSI_SOURCE=simulated
+      - RUVIEW_ALLOW_UNAUTHENTICATED=1
